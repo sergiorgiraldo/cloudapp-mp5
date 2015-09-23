@@ -37,7 +37,7 @@ public final class KMeansMP {
 
         //TODO
 
-        results.saveAsTextFile(results_path);
+        //results.saveAsTextFile(results_path);
 
         sc.stop();
     }
