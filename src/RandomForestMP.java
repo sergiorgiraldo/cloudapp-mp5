@@ -80,7 +80,7 @@ public final class RandomForestMP {
             }
         }).count() / (double) base.count();
 
-        System.out.printf("Classification Accuracy: %.4f \n", accuracy);
+        System.out.println(accuracy);
 
         sc.stop();
     }
