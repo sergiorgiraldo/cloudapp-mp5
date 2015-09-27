@@ -54,31 +54,19 @@ public final class RandomForestMP {
         Integer seed = 12345;
 
         JavaRDD<LabeledPoint> train = sc.textFile(training_data_path).map(new DataToPoint());
-        JavaRDD<LabeledPoint> base = sc.textFile(training_data_path).map(new DataToPoint());
+        JavaRDD<LabeledPoint> test = sc.textFile(training_data_path).map(new DataToPoint());
 
 	model = RandomForest.trainClassifier(train, 
 			numClasses, categoricalFeaturesInfo, numTrees, featureSubsetStrategy, impurity, 
 			maxDepth, maxBins, seed);
 
-        JavaRDD<LabeledPoint> results = base.map(new Function<LabeledPoint, LabeledPoint>() {
-            public LabeledPoint call(LabeledPoint point) {
-                return new LabeledPoint(model.predict(point.features()), point.features());
-            }
-        });
+       JavaRDD<LabeledPoint> results = testData.map { point =>
+          val prediction = model.predict(point.features)
+          (point.label, prediction)
+        };
         results.saveAsTextFile(results_path);
 
-        JavaPairRDD<Double, Double> predictionAndLabel =
-                base.mapToPair(new PairFunction<LabeledPoint, Double, Double>() {
-                    public Tuple2<Double, Double> call(LabeledPoint point) {
-                        return new Tuple2<Double, Double>(model.predict(point.features()), point.label());
-                    }
-                });
-
-        double accuracy = predictionAndLabel.filter(new Function<Tuple2<Double, Double>, Boolean>() {
-            public Boolean call(Tuple2<Double, Double> pl) {
-                return pl._1().equals(pl._2());
-            }
-        }).count() / (double) base.count();
+        double accuracy = results.filter(r => r._1 != r._2).count.toDouble / test.count()
 
         System.out.println(accuracy);
 
